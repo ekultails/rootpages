@@ -402,6 +402,10 @@ Tanzu supports a few of the versions of Kubernetes. Listed below is the minimum 
    1.1.0, "1.18.6 and 1.17.9"
    1.0.0, 1.17.3
 
+VMware vSphere 7 provides support for the Tanzu Kubernetes Grid Service (TKGS). This is a graphical interface and framework for managing Kubernetes on vSphere. It is recommended to only use TKG for vSphere <= 6.
+
+https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/index.html
+
 Installation
 ------------
 
@@ -901,6 +905,54 @@ Setup a TKG Management Cluster and then the production Kubernetes cluster using 
          $ kubectl config use-context <KUBERNETES_CLUSTER_NAME>-admin@<KUBERNETES_CLUSTER_NAME>
          $ kubectl get nodes -o wide
          $ kubectl get -n kube-system pods
+
+VMware vSphere
+^^^^^^^^^^^^^^
+
+Prerequisites:
+
+-  Library
+-  Cluster with HA and fully automated DRS https://www.vembu.com/blog/ha-vs-drs-in-vmware-vsphere/
+
+Configure the vSphere credentials either via environment variables or the TKG configuration file.
+
+.. code-block:: yaml
+
+   ---
+   # File: ~/.tkg/config.yaml
+   VSPHERE_SERVER:
+   VSPHERE_USERNAME:
+   VSPHERE_PASSWORD:
+   VSPHERE_DATACENTER:
+   VSPHERE_DATASTORE:
+   VSPHERE_NETWORK:
+   VSPHERE_RESOURCE_POOL:
+   VSPHERE_FOLDER:
+   VSPHERE_SSH_AUTHORIZED_KEY:
+   SERVICE_CIDR:
+   CLUSTER_CIDR:
+   VSPHERE_WORKER_DISK_GIB:
+   VSPHERE_WORKER_NUM_CPUS:
+   VSPHERE_WORKER_MEM_MIB:
+   VSPHERE_CONTROL_PLANE_DISK_GIB:
+   VSPHERE_CONTROL_PLANE_NUM_CPUS:
+   VSPHERE_CONTROL_PLANE_MEM_MIB:
+
+Settings for small nodes:
+
+.. code-block:: yaml
+
+   ---
+   SERVICE_CIDR: 100.64.0.0/13
+   CLUSTER_CIDR: 100.96.0.0/11
+   VSPHERE_WORKER_DISK_GIB: "20"
+   VSPHERE_WORKER_NUM_CPUS: "2"
+   VSPHERE_WORKER_MEM_MIB: "2048"
+   VSPHERE_CONTROL_PLANE_DISK_GIB: "20"
+   VSPHERE_CONTROL_PLANE_NUM_CPUS: "2"
+   VSPHERE_CONTROL_PLANE_MEM_MIB: "2048"
+
+https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-mgmt-clusters-vsphere-cli.html
 
 Uninstall
 ---------
