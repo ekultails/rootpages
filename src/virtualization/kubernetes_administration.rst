@@ -35,11 +35,6 @@ Worker Node services:
 Networking
 ^^^^^^^^^^
 
-Pod Networking
-''''''''''''''
-
-Kubernetes requires a Container Network Interface (CNI) plugin to create an overlay network for inter-communication between Pods across all of the Control Plane and Worker Nodes. The default Pod network CIDR (as configured by ``kubeadm --pod-network-cidr``) is normally assumed to be 10.244.0.0/16.
-
 Ports
 '''''
 
@@ -1161,7 +1156,7 @@ Concepts
 Container Network Interface (CNI) Plugins
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``kubelet`` service on each ``Node`` interacts with a CNI plugin to manage the network connections between Pods. The cloud operator must pick at least one plugin. For using more than one plugin, use the `Multus CNI project <https://github.com/intel/multus-cni>`__. Canal (both Calico and Flannel combined into a single plugin) is recommended for most use cases.
+Kubernetes requires a Container CNI plugin to create an overlay network for inter-communication between Pods across all of the Control Plane and Worker Nodes. The default Pod network CIDR (as configured by ``kubeadm --pod-network-cidr``) is normally assumed to be 10.244.0.0/16. The cloud operator must pick at least one CNI plugin. For using more than one plugin, use the `Multus CNI project <https://github.com/intel/multus-cni>`__. Canal (both Calico and Flannel combined into a single plugin) is recommended for most use cases.
 
 .. csv-table::
    :header: Plugin, Arm Support, Ease of Configuration, Resource Usage, Network Layer, Encryption, NetworkPolicy Support, Use Case

@@ -2311,6 +2311,30 @@ The example below shows how to configure static storage for a Pod using a direct
 
 [3]
 
+Networking
+~~~~~~~~~~~
+
+Pod Internal (host* and Service)
+
+1. Host
+
+   1a. hostNetwork (Pod API) = Expose the exact Pod ports on the Node it is running on. The Kubernetes CNI plugin does not manage the networking. This is configured via a Pod manifest by setting ``po.spec.containers.hostNetwork`` to ``True``.
+   1b. hostPort
+
+2. Service API
+
+   2a. ClusterIP
+   2b. NodePort = A port between 30000 to 32767 is exposed on every Node (even if the Pod is not running on it) and mapped to a specific Pod.
+   2c. LoadBalancer
+   2d. ExternalName
+
+3. Ingress API
+
+
+Pod External (Ingress)
+
+Ingress only works for exposing public HTTP traffic. A new Gateway API is in development to provide exposing any service (even non-HTTP ones) publicly. https://github.com/kubernetes-sigs/gateway-api
+
 Service and Ingress (Public Networking)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
