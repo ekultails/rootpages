@@ -165,7 +165,7 @@ libvirt:
 
 Disable THP using GRUB.
 
-File: /etc/default/grub
+File: ``/etc/default/grub``
 
 .. code-block:: sh
 
@@ -173,17 +173,23 @@ File: /etc/default/grub
 
 Rebuild the GRUB configuration.
 
-UEFI:
+-  Debian:
 
-.. code-block:: sh
+   .. code-block:: sh
 
-    $ sudo grub2-mkconfig -o /boot/efi/EFI/<OPERATING_SYSTEM>/grub.cfg
+      $ sudo update-grub
 
-BIOS:
+-  Fedora UEFI:
 
-.. code-block:: sh
+   .. code-block:: sh
 
-    $ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+       $ sudo grub2-mkconfig -o /boot/efi/EFI/<OPERATING_SYSTEM>/grub.cfg
+
+-  Fedora BIOS:
+
+   .. code-block:: sh
+
+       $ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 
 Alternatively, THP can be manually disabled. Note that if the GRUB method is used, it will set "enabled" to "never" on boot which means "defrag" does not need to be set to "never" since it is not in use. This manual method should be used on systems that will not be rebooted.
 
@@ -523,50 +529,80 @@ GPU Pass-through
 
 GPU pass-through provides a virtual machine guest with full access to a graphics card. It is required to have two video cards, one for host/hypervisor and one for the guest. [12] Hardware virtualization via VT-d (Intel) or SVM (AMD) is also required along with input-output memory management unit (IOMMU) support. Those settings can be enabled in the BIOS/UEFI on supported motherboards. Components of a motherboard are separated into different IOMMU groups. For GPU pass-through to work, every device in the IOMMU group has to be disabled on the host with a stub kernel driver and passed through to the guest. For the best results, it is recommended to use a motherboard that isolates each connector for the graphics card, usually a PCI slot, into it's own IOMMU group. The QEMU settings for the guest should be configured to use "SeaBIOS" for older cards or "OVMF" for newer cards that support UEFI. [36]
 
--  Enable IOMMU on the hypervisor via the bootloader's kernel options. This will provide a static ID to each hardware device. The "vfio-pci" kernel module also needs to start on boot.
+Enable IOMMU on the hypervisor via the bootloader's kernel options. This will provide a static ID to each hardware device. The "vfio-pci" kernel module also needs to start on boot.
 
-Intel:
+File: ``/etc/default/grub``
 
-::
+-  Intel:
 
-    intel_iommu=on rd.driver.pre=vfio-pci
+   ::
 
-AMD:
+      GRUB_CMDLINE_LINUX="<EXISTING_OPTIONS> intel_iommu=on"
 
-::
+-  AMD:
 
-    amd_iommu=on rd.driver.pre=vfio-pci
+   ::
 
--  For the GRUB bootloader, rebuild the configuration.
+      GRUB_CMDLINE_LINUX="<EXISTING_OPTIONS> amd_iommu=on"
 
-UEFI:
+For the GRUB bootloader, rebuild the configuration.
 
-.. code-block:: sh
+-  Fedora UEFI:
 
-    $ sudo grub2-mkconfig -o /boot/efi/EFI/<OPERATING_SYSTEM>/grub.cfg
+   .. code-block:: sh
 
-BIOS:
+      $ sudo grub2-mkconfig -o /boot/efi/EFI/<OPERATING_SYSTEM>/grub.cfg
 
-.. code-block:: sh
+-  Fedora BIOS:
 
-    $ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+   .. code-block:: sh
+
+      $ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 
 -  Find the IOMMU number for the graphics card. This should be the last alphanumeric set at the end of the line for the graphics card. The format should look similar to `XXXX:XXXX`. Add it to the options for the "vfio-pci" kernel module. This will bind a stub kernel driver to the device so that Linux does not use it.
 
+Syntax:
+
 .. code-block:: sh
 
-    $ sudo lspci -k -nn -v | less
-    $ sudo vim /etc/modprobe.d/vfio.conf
-    options vfio-pci ids=XXXX:XXXX,YYYY:YYYY,ZZZZ:ZZZZ
+   $ sudo lspci -k -nn -v | less
+   $ sudo vim /etc/modprobe.d/vfio.conf
+   options vfio-pci ids=XXXX:XXXX,YYYY:YYYY,ZZZZ:ZZZZ
+
+Example:
+
+.. code-block:: sh
+
+   $ sudo lspci -k -nn -v | less
+   09:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Hawaii XT / Grenada XT [Radeon R9 290X/390X] [1002:67b0] (prog-if 00 [VGA controller])
+   09:00.1 Audio device [0403]: Advanced Micro Devices, Inc. [AMD/ATI] Hawaii HDMI Audio [Radeon R9 290/290X / 390/390X] [1002:aac8]
+   $ sudo vim /etc/modprobe.d/vfio.conf
+   options vfio-pci ids=1002:67b0,1002:aac8
+
+-  For older AMD cards only, install the `vendor-reset kernel module <https://github.com/gnif/vendor-reset>`__ to guarantee that the AMD graphics card will not turn off when no kernel driver is bound to it. Ensure the ``vendor-reset`` module is loaded early on in the boot cycle.
+
+   .. code-block:: sh
+
+      $ git clone https://github.com/gnif/vendor-reset.git
+      $ cd vendor-reset
+      $ dkms install .
+      $ echo "vendor-reset" | sudo tee -a /etc/modules
 
 -  Rebuild the initramfs to include the VFIO related drivers.
 
-Fedora:
+   -  Debian:
 
-.. code-block:: sh
+      .. code-block:: sh
 
-    $ echo 'add_drivers+="vfio vfio_iommu_type1 vfio_pci"' > /etc/dracut.conf.d/vfio.conf
-    $ sudo dracut --force
+         $ echo -e "vfio\nvfio_iommu_type1\nvfio_pci" | sudo tee -a /etc/initramfs-tools/modules
+         $ sudo update-initramfs -u -k all
+
+   -  Fedora:
+
+      .. code-block:: sh
+
+         $ echo 'add_drivers+="vfio vfio_iommu_type1 vfio_pci"' > /etc/dracut.conf.d/vfio.conf
+         $ sudo dracut --force
 
 -  Reboot the hypervisor operating system.
 
@@ -574,19 +610,22 @@ Fedora:
 
 Nvidia cards initialized in the guest with a driver version >= 337.88 can detect if the operating system is being virtualized. This can lead to a "Code: 43" error being returned by the driver and the graphics card not working. A work-a-round for this is to set a random "vendor\_id" to a alphanumeric 12 character value and forcing KVM's emulation to be hidden. This does not affect ATI/AMD graphics cards.
 
-Libvirt:
+libvirt:
 
 .. code-block:: sh
 
-    $ sudo virsh edit <VIRTUAL_MACHINE>
-    <features>
-        <hyperv>
-            <vendor_id state='on' value='123456abcdef'/>
-        </hyperv>
-        <kvm>
-            <hidden state='on'/>
-        </kvm>
-    </features>
+   $ sudo virsh edit <VIRTUAL_MACHINE_NAME>
+
+.. code-block:: xml
+
+   <features>
+       <hyperv>
+           <vendor_id state='on' value='123456abcdef'/>
+       </hyperv>
+       <kvm>
+           <hidden state='on'/>
+       </kvm>
+   </features>
 
 [13]
 
